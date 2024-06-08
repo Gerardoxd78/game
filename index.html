@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego para molestar</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="480" height="320"></canvas>
+    <script>
+        // Variables
+        var canvas = document.getElementById("gameCanvas");
+        var ctx = canvas.getContext("2d");
+        var bird = { x: 50, y: canvas.height / 2, radius: 20, gravity: 0.1, velocity: 0 };
+        var obstacles = [];
+        var score = 0;
+        var gameSpeed = 2;
+        var isGameOver = false;
+        var isGameStarted = false;
+
+        // Functions
+        function drawBird() {
+            ctx.beginPath();
+            ctx.arc(bird.x, bird.y, bird.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawObstacles() {
+            for (var i = 0; i < obstacles.length; i++) {
+                ctx.beginPath();
+                ctx.rect(obstacles[i].x, 0, obstacles[i].width, obstacles[i].topHeight);
+                ctx.rect(obstacles[i].x, obstacles[i].bottomY, obstacles[i].width, canvas.height - obstacles[i].bottomY);
+                ctx.fillStyle = "green";
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        function updateScore() {
+            ctx.font = "20px Arial";
+            ctx.fillStyle = "black";
+            ctx.fillText("Score: " + score, 10, 30);
+        }
+
+        function update() {
+            if (!isGameOver) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Update bird position
+                bird.velocity += bird.gravity;
+                bird.y += bird.velocity;
+
+                // Generate obstacles
+                if (Math.random() < 0.02) {
+                    var obstacleWidth = 40;
+                    var minGap = 100;
+                    var gap = Math.random() * (canvas.height - minGap * 2) + minGap;
+                    obstacles.push({ x: canvas.width, topHeight: gap - minGap, bottomY: gap + minGap, width: obstacleWidth });
+                }
+
+                // Move obstacles
+                for (var i = 0; i < obstacles.length; i++) {
+                    obstacles[i].x -= gameSpeed;
+
+                    // Check collision
+                    if (bird.x + bird.radius > obstacles[i].x && bird.x - bird.radius < obstacles[i].x + obstacles[i].width &&
+                        (bird.y - bird.radius < obstacles[i].topHeight || bird.y + bird.radius > obstacles[i].bottomY)) {
+                        isGameOver = true;
+                    }
+
+                    // Check if passed obstacle
+                    if (bird.x > obstacles[i].x + obstacles[i].width && !obstacles[i].passed) {
+                        obstacles[i].passed = true;
+                        score++;
+                    }
+
+                    // Remove obstacles that are out of canvas
+                    if (obstacles[i].x + obstacles[i].width < 0) {
+                        obstacles.splice(i, 1);
+                        i--;
+                    }
+                }
+
+                drawBird();
+                drawObstacles();
+                updateScore();
+                requestAnimationFrame(update);
+            } else {
+                // Game over
+                ctx.font = "30px Arial";
+                ctx.fillStyle = "black";
+                ctx.fillText("MARITZA ERES TAN XD", canvas.width / 2 - 100, canvas.height / 2);
+                ctx.fillText("YA PRESIONA R Y CONTINUA HUMILLANDOTE", canvas.width / 2 - 150, canvas.height / 2 + 50);
+            }
+        }
+
+        // Event listeners
+        document.addEventListener("keydown", function(event) {
+            if (event.keyCode === 32 && !isGameOver) { // spacebar to jump
+                bird.velocity = -3; // jump
+                if (!isGameStarted) {
+                    isGameStarted = true;
+                    update();
+                }
+            }
+            if (event.keyCode === 82 && isGameOver) { // 'R' to restart
+                resetGame();
+            }
+        });
+
+        // Reset game
+        function resetGame() {
+            bird = { x: 50, y: canvas.height / 2, radius: 20, gravity: 0.1, velocity: 0 };
+            obstacles = [];
+            score = 0;
+            isGameOver = false;
+            isGameStarted = false;
+            update();
+        }
+
+        // Start game
+        update();
+    </script>
+</body>
+</html>
